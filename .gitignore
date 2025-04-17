@@ -6,3 +6,4 @@ UserSettings
 .vs
 *.sln
 Logs
+obj
