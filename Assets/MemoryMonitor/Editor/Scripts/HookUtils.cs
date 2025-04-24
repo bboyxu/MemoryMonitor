@@ -26,7 +26,7 @@ namespace MemoryMonitor.Editor
     /// </summary>
     public class HookUtils
     {
-        private static Dictionary<string, FunctionData> dataRecord = new Dictionary<string, FunctionData>();
+        private static Dictionary<string, FunctionData> dataRecords = new Dictionary<string, FunctionData>();
 
         private static Thread mainThread = Thread.CurrentThread;
 
@@ -36,34 +36,31 @@ namespace MemoryMonitor.Editor
         /// <param name="name">被监控的函数名.</param>
         public static void Begin(string name)
         {
-            if (Thread.CurrentThread == mainThread)
+            if (Thread.CurrentThread != mainThread)
             {
-                long tmpMen = Profiler.GetTotalAllocatedMemoryLong();
-                float tmpTime = Time.realtimeSinceStartup;
-                if (dataRecord.ContainsKey(name))
-                {
-                    FunctionData tmp = dataRecord[name];
-                    tmp.StartMemory = tmpMen;
-                    tmp.StartTime = tmpTime;
-                    dataRecord[name] = tmp;
-                }
-                else
-                {
-                    FunctionData tmp = new()
-                    {
-                        Name = name,
-                        OnceMemory = 0L,
-                        OnceTime = 0f,
-                        Calls = 0,
-                        TotalMemory = 0L,
-                        TotalTime = 0f,
-                        StartMemory = tmpMen,
-                        StartTime = tmpTime,
-                    };
-
-                    dataRecord.Add(name, tmp);
-                }
+                return;
             }
+
+            // 在unity保留的系统内存中，已经申请使用的内存
+            long tmpMemory = Profiler.GetTotalAllocatedMemoryLong();
+            float tmpTime = Time.realtimeSinceStartup;
+            FunctionData tmpData;
+            if (dataRecords.ContainsKey(name))
+            {
+                tmpData = dataRecords[name];
+            }
+            else
+            {
+                tmpData = new FunctionData()
+                {
+                    Name = name,
+                };
+
+                dataRecords.Add(name, tmpData);
+            }
+
+            tmpData.StartMemory = tmpMemory;
+            tmpData.StartTime = tmpTime;
         }
 
         /// <summary>
@@ -72,40 +69,40 @@ namespace MemoryMonitor.Editor
         /// <param name="name">被监控的函数名.</param>
         public static void End(string name)
         {
-            if (Thread.CurrentThread == mainThread)
+            if (Thread.CurrentThread != mainThread)
             {
-                long tmpMem = Profiler.GetTotalAllocatedMemoryLong();
-                float tmpTime = Time.realtimeSinceStartup;
-                FunctionData tmp = dataRecord[name];
+                return;
+            }
 
-                // 过滤因为GC而统计不正确的数据
-                if (tmpMem - tmp.StartMemory >= 0)
-                {
-                    tmp.OnceMemory = tmpMem - tmp.StartMemory;
-                    tmp.OnceTime = tmpTime - tmp.StartTime;
-                    tmp.TotalMemory += tmp.OnceMemory;
-                    tmp.TotalTime += tmp.OnceTime;
-                    tmp.Calls += 1;
-                    tmp.StartMemory = 0L;
-                    tmp.StartTime = 0f;
-                    dataRecord[name] = tmp;
-                }
+            // 在unity保留的系统内存中，已经申请使用的内存
+            long tmpMemory = Profiler.GetTotalAllocatedMemoryLong();
+            float tmpTime = Time.realtimeSinceStartup;
+            FunctionData tmpData = dataRecords[name];
+
+            // 过滤因为GC而统计不正确的数据
+            if (tmpMemory - tmpData.StartMemory >= 0)
+            {
+                tmpData.OnceMemory = tmpMemory - tmpData.StartMemory;
+                tmpData.OnceTime = tmpTime - tmpData.StartTime;
+                tmpData.TotalMemory += tmpData.OnceMemory;
+                tmpData.TotalTime += tmpData.OnceTime;
+                tmpData.Calls += 1;
             }
         }
 
         /// <summary>
         /// 输出统计结果.
         /// </summary>
-        public static void ToMessage()
+        public static void SaveToLocalFile()
         {
             string nowTime = System.DateTime.Now.ToString("[yyyy-MM-dd]-[HH-mm-ss]");
             string fileName = nowTime + ".csv";
-            string header = "funName,funMem/k,funAverageMem/k,funTime/s,funAverageTime/s,funCalls";
+            string header = "函数名(Name),单次占用内存(OnceMemory/KB),均次占用内存(KB),单次耗时(S),均次耗时(S),执行次数";
 
-            using (StreamWriter sw = new (fileName))
+            using (StreamWriter sw = new StreamWriter(fileName))
             {
                 sw.WriteLine(header);
-                var ge = dataRecord.GetEnumerator();
+                var ge = dataRecords.GetEnumerator();
                 while (ge.MoveNext())
                 {
                     FunctionData tmp = ge.Current.Value;

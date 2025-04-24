@@ -18,6 +18,7 @@ namespace MemoryMonitor.Editor
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
     using Mono.Cecil;
     using Mono.Cecil.Cil;
     using UnityEditor;
@@ -30,46 +31,43 @@ namespace MemoryMonitor.Editor
     {
         private static List<string> assemblyPathss = new List<string>()
         {
-            Application.dataPath + "/../Library/ScriptAssemblies/Assembly-CSharp.dll",
-            Application.dataPath + "/../Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll",
+            Application.dataPath + "/Library/ScriptAssemblies/Assembly-CSharp.dll",
+            Application.dataPath + "/Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll",
         };
-
-        /// <summary>
-        /// 主动注入代码.
-        /// </summary>
-        [MenuItem("Tools/MemoryMonitor/主动注入代码")]
-        private static void ReCompile()
-        {
-            AssemblyPostProcessorRun();
-        }
 
         /// <summary>
         /// 输出结果.
         /// </summary>
         [MenuItem("Tools/MemoryMonitor/输出结果")]
-        private static void OutputFile()
+        private static void SaveToLocalFile()
         {
-            HookUtils.ToMessage();
+            HookUtils.SaveToLocalFile();
         }
 
-        private static void AssemblyPostProcessorRun()
+        /// <summary>
+        /// 主动注入代码.
+        /// </summary>
+        [MenuItem("Tools/MemoryMonitor/主动注入代码")]
+        private static void InjectHooks()
         {
             try
             {
-                Debug.Log("AssemblyPostProcessor running");
+                Debug.Log("InjectHooks running...");
+
                 EditorApplication.LockReloadAssemblies();
                 DefaultAssemblyResolver assemblyResolver = new DefaultAssemblyResolver();
 
-                foreach (System.Reflection.Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+                Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                foreach (Assembly assembly in assemblies)
                 {
-                    if (!assembly.IsDynamic)
-                    {
-                        assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(assembly.Location));
-                    }
-                    else
+                    if (assembly.IsDynamic)
                     {
                         Debug.Log(assembly.IsDynamic);
                         Debug.Log(assembly.FullName);
+                    }
+                    else
+                    {
+                        assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(assembly.Location));
                     }
                 }
 
