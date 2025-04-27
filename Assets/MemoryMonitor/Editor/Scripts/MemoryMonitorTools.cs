@@ -71,8 +71,6 @@ namespace MemoryMonitor.Editor
                     }
                 }
 
-                assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(EditorApplication.applicationPath) + "/Data/Managed");
-
                 ReaderParameters readerParameters = new ReaderParameters();
                 readerParameters.AssemblyResolver = assemblyResolver;
 
@@ -81,16 +79,12 @@ namespace MemoryMonitor.Editor
                 foreach (string assemblyPath in assemblyPathss)
                 {
                     readerParameters.ReadSymbols = true;
-
-                    //// readerParameters.SymbolReaderProvider = new Mono.Cecil.Mdb.MdbReaderProvider();
                     writerParameters.WriteSymbols = true;
-                    //// writerParameters.SymbolWriterProvider = new Mono.Cecil.Mdb.MdbWriterProvider();
+
                     AssemblyDefinition assemblyDefinition = AssemblyDefinition.ReadAssembly(assemblyPath, readerParameters);
                     if (ProcessAssembly(assemblyDefinition))
                     {
-                        Debug.Log("Writing to " + assemblyPath);
                         assemblyDefinition.Write(assemblyPath, writerParameters);
-                        Debug.Log("Done writing");
                     }
                     else
                     {
@@ -133,38 +127,6 @@ namespace MemoryMonitor.Editor
 
                     foreach (MethodDefinition methodDefinition in typeDefinition.Methods)
                     {
-                        // 过滤构造函数
-                        if (methodDefinition.Name == ".ctor")
-                        {
-                            continue;
-                        }
-
-                        if (methodDefinition.Name == ".cctor")
-                        {
-                            continue;
-                        }
-
-                        // 过滤抽象方法、虚函数、get set 方法
-                        if (methodDefinition.IsAbstract)
-                        {
-                            continue;
-                        }
-
-                        if (methodDefinition.IsVirtual)
-                        {
-                            continue;
-                        }
-
-                        if (methodDefinition.IsGetter)
-                        {
-                            continue;
-                        }
-
-                        if (methodDefinition.IsSetter)
-                        {
-                            continue;
-                        }
-
                         // 如果注入代码失败，可以打开下面的输出看看卡在了那个方法上。
                         ////Debug.Log(methodDefinition.Name  +" ===== "+ methodDefinition.Body + "======= " + typeDefinition.Name + "======= " +typeDefinition.BaseType.GenericParameters +" ===== "+ moduleDefinition.Name);
                         MethodReference logMethodReference = moduleDefinition.Import(typeof(HookUtils).GetMethod("Begin", new Type[] { typeof(string) }));
