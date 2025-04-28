@@ -31,8 +31,7 @@ namespace MemoryMonitor.Editor
     {
         private static List<string> assemblyPathss = new List<string>()
         {
-            Application.dataPath + "/Library/ScriptAssemblies/Assembly-CSharp.dll",
-            Application.dataPath + "/Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll",
+            Application.dataPath + "/../Library/ScriptAssemblies/MemoryMonitor.Test.dll",
         };
 
         /// <summary>
@@ -41,13 +40,13 @@ namespace MemoryMonitor.Editor
         [MenuItem("Tools/MemoryMonitor/输出结果")]
         private static void SaveToLocalFile()
         {
-            HookUtils.SaveToLocalFile();
+            MemoryProfiler.SaveToLocalFile();
         }
 
         /// <summary>
         /// 主动注入代码.
         /// </summary>
-        [MenuItem("Tools/MemoryMonitor/主动注入代码")]
+        [MenuItem("Tools/MemoryMonitor/注入代码")]
         private static void InjectHooks()
         {
             try
@@ -91,6 +90,8 @@ namespace MemoryMonitor.Editor
                         Debug.Log(Path.GetFileName(assemblyPath) + " didn't need to be processed");
                     }
                 }
+
+                Debug.Log("InjectHooks completed.");
             }
             catch (Exception e)
             {
@@ -108,7 +109,7 @@ namespace MemoryMonitor.Editor
             {
                 foreach (TypeDefinition typeDefinition in moduleDefinition.Types)
                 {
-                    if (typeDefinition.Name == typeof(HookUtils).Name)
+                    if (typeDefinition.Name == typeof(MemoryProfiler).Name)
                     {
                         continue;
                     }
@@ -129,8 +130,8 @@ namespace MemoryMonitor.Editor
                     {
                         // 如果注入代码失败，可以打开下面的输出看看卡在了那个方法上。
                         ////Debug.Log(methodDefinition.Name  +" ===== "+ methodDefinition.Body + "======= " + typeDefinition.Name + "======= " +typeDefinition.BaseType.GenericParameters +" ===== "+ moduleDefinition.Name);
-                        MethodReference logMethodReference = moduleDefinition.Import(typeof(HookUtils).GetMethod("Begin", new Type[] { typeof(string) }));
-                        MethodReference logMethodReference1 = moduleDefinition.Import(typeof(HookUtils).GetMethod("End", new Type[] { typeof(string) }));
+                        MethodReference logMethodReference = moduleDefinition.Import(typeof(MemoryProfiler).GetMethod("Begin", new Type[] { typeof(string) }));
+                        MethodReference logMethodReference1 = moduleDefinition.Import(typeof(MemoryProfiler).GetMethod("End", new Type[] { typeof(string) }));
 
                         // 如果注入方法失败可以试试先跳过
                         ////if(methodDefinition.Body==null)

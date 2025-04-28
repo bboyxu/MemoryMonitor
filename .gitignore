@@ -7,3 +7,5 @@ UserSettings
 *.sln
 Logs
 obj
+Assets/MemoryMonitor/Editor/Scripts/MemoryProfiler.cs
+Assets/MemoryMonitor/Editor/Scripts/MemoryProfiler.cs.meta
