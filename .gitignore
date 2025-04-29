@@ -7,4 +7,4 @@ UserSettings
 *.sln
 Logs
 obj
-Assets/MemoryMonitorFiles
+MemoryMonitorFiles
