@@ -130,8 +130,8 @@ namespace MemoryMonitor.Editor
                     {
                         // 如果注入代码失败，可以打开下面的输出看看卡在了那个方法上。
                         ////Debug.Log(methodDefinition.Name  +" ===== "+ methodDefinition.Body + "======= " + typeDefinition.Name + "======= " +typeDefinition.BaseType.GenericParameters +" ===== "+ moduleDefinition.Name);
-                        MethodReference logMethodReference = moduleDefinition.Import(typeof(MemoryProfiler).GetMethod("Begin", new Type[] { typeof(string) }));
-                        MethodReference logMethodReference1 = moduleDefinition.Import(typeof(MemoryProfiler).GetMethod("End", new Type[] { typeof(string) }));
+                        MethodReference logMethodReference = moduleDefinition.ImportReference(typeof(MemoryProfiler).GetMethod("Begin", new Type[] { typeof(string) }));
+                        MethodReference logMethodReference1 = moduleDefinition.ImportReference(typeof(MemoryProfiler).GetMethod("End", new Type[] { typeof(string) }));
 
                         // 如果注入方法失败可以试试先跳过
                         ////if(methodDefinition.Body==null)
