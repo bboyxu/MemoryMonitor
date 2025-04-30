@@ -140,21 +140,14 @@ namespace MemoryMonitor.Editor
                         continue;
                     }
 
-                    bool isDerivedFromMonoBehaviour = IsDerivedFrom(typeDefinition, "MonoBehaviour");
-
                     foreach (MethodDefinition methodDefinition in typeDefinition.Methods)
                     {
-                        if (isDerivedFromMonoBehaviour)
+                        if (methodDefinition.Name == ".ctor"
+                            || methodDefinition.Name == ".cctor"
+                            || methodDefinition.IsGetter
+                            || methodDefinition.IsSetter)
                         {
-                            if (methodDefinition.Name == ".ctor")
-                            {
-                                continue;
-                            }
-
-                            if (methodDefinition.Name == ".cctor")
-                            {
-                                continue;
-                            }
+                            continue;
                         }
 
                         // 如果注入代码失败，可以打开下面的输出看看卡在了那个方法上。
