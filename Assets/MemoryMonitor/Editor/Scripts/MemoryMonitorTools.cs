@@ -40,7 +40,7 @@ namespace MemoryMonitor.Editor
         /// <summary>
         /// 输出结果.
         /// </summary>
-        [MenuItem("Tools/MemoryMonitor/输出结果")]
+        [MenuItem("MemoryMonitor/输出结果")]
         private static void SaveToLocalFile()
         {
             MemoryProfiler.SaveToLocalFile();
@@ -49,7 +49,7 @@ namespace MemoryMonitor.Editor
         /// <summary>
         /// 主动注入代码.
         /// </summary>
-        [MenuItem("Tools/MemoryMonitor/注入代码")]
+        [MenuItem("MemoryMonitor/注入代码")]
         private static void InjectHooks()
         {
             try

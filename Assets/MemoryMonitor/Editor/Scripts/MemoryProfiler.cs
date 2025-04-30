@@ -26,6 +26,7 @@ namespace MemoryMonitor.Editor
     /// </summary>
     public class MemoryProfiler
     {
+        // 此缓存会在每次unity启动时清空.
         private static Dictionary<string, FunctionData> dataRecords = new Dictionary<string, FunctionData>();
 
         private static Thread mainThread = Thread.CurrentThread;
@@ -88,8 +89,6 @@ namespace MemoryMonitor.Editor
                 tmpData.TotalTime += tmpData.OnceTime;
                 tmpData.Calls += 1;
             }
-
-            Debug.Log(tmpData.Name + " End");
         }
 
         /// <summary>
