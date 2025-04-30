@@ -29,9 +29,12 @@ namespace MemoryMonitor.Editor
     /// </summary>
     public class MemoryMonitorTools
     {
-        private static List<string> assemblyPathss = new List<string>()
+        private static string dllRoot = $"{UnityEngine.Application.dataPath}/../Library/ScriptAssemblies";
+
+        private static List<string> assemblyFilters = new List<string>()
         {
-            Application.dataPath + "/../Library/ScriptAssemblies/MemoryMonitor.Test.dll",
+           "MemoryMonitor.Test.dll",
+           "Nimbus.",
         };
 
         /// <summary>
@@ -59,24 +62,43 @@ namespace MemoryMonitor.Editor
                 Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
                 foreach (Assembly assembly in assemblies)
                 {
-                    if (assembly.IsDynamic)
-                    {
-                        Debug.Log(assembly.IsDynamic);
-                        Debug.Log(assembly.FullName);
-                    }
-                    else
+                    if (!assembly.IsDynamic)
                     {
                         assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(assembly.Location));
                     }
                 }
+
+                assemblyResolver.AddSearchDirectory(Path.GetDirectoryName(EditorApplication.applicationPath) + "/Data/Managed");
 
                 ReaderParameters readerParameters = new ReaderParameters();
                 readerParameters.AssemblyResolver = assemblyResolver;
 
                 WriterParameters writerParameters = new WriterParameters();
 
-                foreach (string assemblyPath in assemblyPathss)
+                string[] dllFiles = Directory.GetFiles(dllRoot);
+                foreach (string dllFullName in dllFiles)
                 {
+                    if (Path.GetExtension(dllFullName) != ".dll")
+                    {
+                        continue;
+                    }
+
+                    bool isMatched = false;
+                    foreach (var filter in assemblyFilters)
+                    {
+                        if (dllFullName.Contains(filter))
+                        {
+                            isMatched = true;
+                            break;
+                        }
+                    }
+
+                    if (!isMatched)
+                    {
+                        continue;
+                    }
+
+                    string assemblyPath = dllFullName;
                     readerParameters.ReadSymbols = true;
                     writerParameters.WriteSymbols = true;
 
@@ -84,6 +106,7 @@ namespace MemoryMonitor.Editor
                     if (ProcessAssembly(assemblyDefinition))
                     {
                         assemblyDefinition.Write(assemblyPath, writerParameters);
+                        Debug.Log($"inject completed: {Path.GetFileName(assemblyPath)}");
                     }
                     else
                     {
@@ -109,32 +132,38 @@ namespace MemoryMonitor.Editor
             {
                 foreach (TypeDefinition typeDefinition in moduleDefinition.Types)
                 {
-                    if (typeDefinition.Name == typeof(MemoryProfiler).Name)
+                    if (typeDefinition.Name == typeof(MemoryProfiler).Name
+                        || typeDefinition.IsAbstract
+                        || typeDefinition.IsInterface
+                        || IsDelegateType(typeDefinition))
                     {
                         continue;
                     }
 
-                    // 过滤抽象类
-                    if (typeDefinition.IsAbstract)
-                    {
-                        continue;
-                    }
-
-                    // 过滤抽象方法
-                    if (typeDefinition.IsInterface)
-                    {
-                        continue;
-                    }
+                    bool isDerivedFromMonoBehaviour = IsDerivedFrom(typeDefinition, "MonoBehaviour");
 
                     foreach (MethodDefinition methodDefinition in typeDefinition.Methods)
                     {
+                        if (isDerivedFromMonoBehaviour)
+                        {
+                            if (methodDefinition.Name == ".ctor")
+                            {
+                                continue;
+                            }
+
+                            if (methodDefinition.Name == ".cctor")
+                            {
+                                continue;
+                            }
+                        }
+
                         // 如果注入代码失败，可以打开下面的输出看看卡在了那个方法上。
-                        ////Debug.Log(methodDefinition.Name  +" ===== "+ methodDefinition.Body + "======= " + typeDefinition.Name + "======= " +typeDefinition.BaseType.GenericParameters +" ===== "+ moduleDefinition.Name);
+                        ////Debug.Log(methodDefinition.Name + " ===== " + methodDefinition.Body + "======= " + typeDefinition.Name + "======= " + typeDefinition.BaseType.GenericParameters + " ===== " + moduleDefinition.Name);
                         MethodReference logMethodReference = moduleDefinition.ImportReference(typeof(MemoryProfiler).GetMethod("Begin", new Type[] { typeof(string) }));
                         MethodReference logMethodReference1 = moduleDefinition.ImportReference(typeof(MemoryProfiler).GetMethod("End", new Type[] { typeof(string) }));
 
                         // 如果注入方法失败可以试试先跳过
-                        ////if(methodDefinition.Body==null)
+                        ////if (methodDefinition.Body == null)
                         ////{
                         ////    Debug.Log(methodDefinition.Name);
                         ////    continue;
@@ -165,6 +194,47 @@ namespace MemoryMonitor.Editor
             }
 
             return wasProcessed;
+        }
+
+        private static bool IsDerivedFrom(TypeDefinition type, string typeName)
+        {
+            if (type.BaseType == null)
+            {
+                return false;
+            }
+
+            if (type.BaseType.Name == typeName)
+            {
+                return true;
+            }
+
+            var baseTypeDef = type.BaseType.Resolve();
+            return baseTypeDef != null && IsDerivedFrom(baseTypeDef, typeName);
+        }
+
+        private static bool IsDelegateType(TypeDefinition type)
+        {
+            if (type == null)
+            {
+                return false;
+            }
+
+            // 检查基类链
+            TypeDefinition currentType = type;
+            while (currentType != null)
+            {
+                if (currentType.FullName == "System.MulticastDelegate" ||
+                    currentType.FullName == "System.Delegate")
+                {
+                    // 检查是否存在 Invoke 方法
+                    return type.Methods.Any(m => m.Name == "Invoke");
+                }
+
+                // 移动到基类
+                currentType = currentType.BaseType?.Resolve();
+            }
+
+            return false;
         }
     }
 }

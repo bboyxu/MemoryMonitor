@@ -18,15 +18,15 @@ namespace Jtl3d.Assets.Scripts
     using UnityEngine.Profiling;
 
     /// <summary>
-    /// .
+    /// 空脚本.
     /// </summary>
     public class MyClass1 : MonoBehaviour
     {
-        private void Update()
+        private void Start()
         {
-            Debug.Log("Total Reserved memory by Unity: " + Profiler.GetTotalReservedMemoryLong() + "Bytes");
-            Debug.Log("- Allocated memory by Unity: " + Profiler.GetTotalAllocatedMemoryLong() + "Bytes");
-            Debug.Log("- Reserved but not allocated: " + Profiler.GetTotalUnusedReservedMemoryLong() + "Bytes");
+            ////Debug.Log("Total Reserved memory by Unity: " + Profiler.GetTotalReservedMemoryLong() + "Bytes");
+            ////Debug.Log("- Allocated memory by Unity: " + Profiler.GetTotalAllocatedMemoryLong() + "Bytes");
+            ////Debug.Log("- Reserved but not allocated: " + Profiler.GetTotalUnusedReservedMemoryLong() + "Bytes");
         }
     }
 }

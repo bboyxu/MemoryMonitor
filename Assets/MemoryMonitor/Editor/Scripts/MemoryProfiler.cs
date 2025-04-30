@@ -88,6 +88,8 @@ namespace MemoryMonitor.Editor
                 tmpData.TotalTime += tmpData.OnceTime;
                 tmpData.Calls += 1;
             }
+
+            Debug.Log(tmpData.Name + " End");
         }
 
         /// <summary>
